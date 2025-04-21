@@ -11,8 +11,16 @@ def create_app(config_class=Config):
     from .routes import department_routes # 在这里添加所有的 routes
     from .routes import doctor_routes
     from .routes import patient_routes
+    from .routes import admission_routes
+    from .routes import visit_routes
+    from .routes import ward_routes
+    from .routes import sta_routes
     app.register_blueprint(department_routes.bp)
     app.register_blueprint(doctor_routes.bp)
     app.register_blueprint(patient_routes.bp)
+    app.register_blueprint(admission_routes.bp)
+    app.register_blueprint(visit_routes.bp)
+    app.register_blueprint(sta_routes.bp)
+    app.register_blueprint(ward_routes.bp)
 
     return app
