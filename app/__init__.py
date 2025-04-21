@@ -8,7 +8,11 @@ def create_app(config_class=Config):
 
     db.init_app(app)
 
-    from app.routes import department_routes # 在这里添加所有的 routes
+    from .routes import department_routes # 在这里添加所有的 routes
+    from .routes import doctor_routes
+    from .routes import patient_routes
     app.register_blueprint(department_routes.bp)
+    app.register_blueprint(doctor_routes.bp)
+    app.register_blueprint(patient_routes.bp)
 
     return app
