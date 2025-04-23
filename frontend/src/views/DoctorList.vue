@@ -28,7 +28,7 @@
     <el-card class="table-card">
       <el-table
         v-loading="loading"
-        :data="doctorList"
+        :data="getCurrentPageData()"
         border
         style="width: 100%"
         :header-cell-style="{textAlign: 'center'}"
@@ -87,6 +87,7 @@ import { getDepartmentList } from '@/api/department'
 const router = useRouter()
 const loading = ref(false)
 const doctorList = ref([])
+const filteredDoctorList = ref([])
 const departmentList = ref([])
 
 // 搜索表单
@@ -107,21 +108,11 @@ const pagination = reactive({
 const fetchDoctorList = async () => {
   loading.value = true
   try {
-    const params = {
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-      ...searchForm
-    }
-    
-    const res = await getDoctorList(params)
+    const res = await getDoctorList()
     doctorList.value = res.data.list || res.data
-    pagination.total = res.data.total || res.data.length
-    if (res.data.page) {
-      pagination.current = res.data.page
-    }
-    if (res.data.pageSize) {
-      pagination.pageSize = res.data.pageSize
-    }
+    filteredDoctorList.value = doctorList.value
+    pagination.total = doctorList.value.length
+    handleSearch() // 获取数据后立即应用筛选
   } catch (error) {
     console.error('获取医师列表失败:', error)
     ElMessage.error('获取医师列表失败')
@@ -151,8 +142,20 @@ const getDepartmentName = (deptId) => {
 
 // 搜索
 const handleSearch = () => {
+  // 根据搜索条件筛选数据
+  filteredDoctorList.value = doctorList.value.filter(item => {
+    const nameMatch = !searchForm.Name || 
+      item.Name.toLowerCase().includes(searchForm.Name.toLowerCase())
+    const deptMatch = !searchForm.DeptID || 
+      item.DeptID === searchForm.DeptID
+    const titleMatch = !searchForm.Title || 
+      item.Title.toLowerCase().includes(searchForm.Title.toLowerCase())
+    return nameMatch && deptMatch && titleMatch
+  })
+  
+  // 更新分页信息
+  pagination.total = filteredDoctorList.value.length
   pagination.current = 1
-  fetchDoctorList()
 }
 
 // 重置搜索
@@ -160,8 +163,14 @@ const resetSearch = () => {
   Object.keys(searchForm).forEach(key => {
     searchForm[key] = ''
   })
-  pagination.current = 1
-  fetchDoctorList()
+  handleSearch()
+}
+
+// 获取当前页的数据
+const getCurrentPageData = () => {
+  const start = (pagination.current - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+  return filteredDoctorList.value.slice(start, end)
 }
 
 // 编辑医师
@@ -202,13 +211,12 @@ const handleDelete = (row) => {
 // 页面大小变化
 const handleSizeChange = (size) => {
   pagination.pageSize = size
-  fetchDoctorList()
+  pagination.current = 1
 }
 
 // 当前页变化
 const handleCurrentChange = (page) => {
   pagination.current = page
-  fetchDoctorList()
 }
 
 // 组件挂载时获取数据
