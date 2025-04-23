@@ -16,16 +16,14 @@
           <el-select
             v-model="form.VisitID"
             placeholder="请选择就诊记录"
-            filterable
-            remote
-            :remote-method="searchVisits"
-            :loading="visitLoading"
             style="width: 100%"
+            filterable
+            @change="handleVisitChange"
           >
             <el-option
               v-for="visit in visitList"
               :key="visit.VisitID"
-              :label="`${visit.PatientName} - ${visit.VisitDate}`"
+              :label="`${getPatientName(visit.PatientID)} - ${visit.Diagnosis} - ${visit.VisitDate}`"
               :value="visit.VisitID"
             />
           </el-select>
@@ -66,10 +64,10 @@
         <el-form-item label="入院日期" prop="AdmissionDate">
           <el-date-picker
             v-model="form.AdmissionDate"
-            type="datetime"
-            placeholder="请选择入院日期时间"
+            type="date"
+            placeholder="请选择入院日期"
             style="width: 100%"
-            value-format="YYYY-MM-DD HH:mm:ss"
+            value-format="YYYY-MM-DD"
           />
         </el-form-item>
         
@@ -93,43 +91,75 @@
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { addAdmission } from '@/api/admission'
 import { getWardList } from '@/api/ward'
 import { getVisitList } from '@/api/visit'
+import { getPatientList } from '@/api/patient'
 
+const router = useRouter()
 const formRef = ref(null)
-const visitLoading = ref(false)
 const visitList = ref([])
 const wardList = ref([])
 const availableBeds = ref([])
+const patientList = ref([])
 
 // 表单数据
 const form = reactive({
-  VisitID: '',
   WardID: '',
+  VisitID: '',
   BedNo: '',
   AdmissionDate: '',
+  DischargeDate: null,
   AdmissionReason: ''
 })
 
 // 表单验证规则
 const rules = {
-  VisitID: [
-    { required: true, message: '请选择就诊记录', trigger: 'change' }
-  ],
   WardID: [
     { required: true, message: '请选择病房', trigger: 'change' }
+  ],
+  VisitID: [
+    { required: true, message: '请选择就诊记录', trigger: 'change' }
   ],
   BedNo: [
     { required: true, message: '请选择床位号', trigger: 'change' }
   ],
   AdmissionDate: [
-    { required: true, message: '请选择入院日期时间', trigger: 'change' }
+    { required: true, message: '请选择入院日期', trigger: 'change' }
   ],
   AdmissionReason: [
     { required: true, message: '请输入入院原因', trigger: 'blur' }
   ]
+}
+
+// 获取患者列表
+const fetchPatientList = async () => {
+  try {
+    const res = await getPatientList()
+    patientList.value = res.data.list || res.data
+  } catch (error) {
+    console.error('获取患者列表失败:', error)
+    ElMessage.error('获取患者列表失败')
+  }
+}
+
+// 根据患者ID获取患者名称
+const getPatientName = (patientId) => {
+  const patient = patientList.value.find(item => item.PatientID === patientId)
+  return patient ? patient.Name : '未知患者'
+}
+
+// 获取就诊记录列表
+const fetchVisitList = async () => {
+  try {
+    const res = await getVisitList()
+    visitList.value = res.data.list || res.data
+  } catch (error) {
+    console.error('获取就诊记录失败:', error)
+    ElMessage.error('获取就诊记录失败')
+  }
 }
 
 // 获取病房列表
@@ -143,20 +173,12 @@ const fetchWardList = async () => {
   }
 }
 
-// 搜索就诊记录
-const searchVisits = async (query) => {
-  if (query) {
-    visitLoading.value = true
-    try {
-      const res = await getVisitList({ keyword: query })
-      visitList.value = res.data.list || res.data
-    } catch (error) {
-      console.error('搜索就诊记录失败:', error)
-    } finally {
-      visitLoading.value = false
-    }
-  } else {
-    visitList.value = []
+// 处理就诊记录选择变化
+const handleVisitChange = (visitId) => {
+  const visit = visitList.value.find(item => item.VisitID === visitId)
+  if (visit) {
+    // 可以在这里设置一些默认值，比如入院原因
+    form.AdmissionReason = visit.Diagnosis || ''
   }
 }
 
@@ -181,12 +203,26 @@ const handleSubmit = async () => {
   await formRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        await addAdmission(form)
-        ElMessage.success('入院办理成功')
-        $router.push('/admissions')
+        // 准备提交的数据
+        const submitData = {
+          WardID: form.WardID,
+          VisitID: form.VisitID,
+          BedNo: form.BedNo,
+          AdmissionDate: form.AdmissionDate,
+          DischargeDate: null,
+          AdmissionReason: form.AdmissionReason
+        }
+        
+        const response = await addAdmission(submitData)
+        if (response && response.AdmissionID) {
+          ElMessage.success('入院办理成功')
+          router.push('/admissions')
+        } else {
+          throw new Error('办理入院失败：响应数据格式不正确')
+        }
       } catch (error) {
         console.error('办理入院失败:', error)
-        ElMessage.error('办理入院失败')
+        ElMessage.error(error.message || '办理入院失败')
       }
     }
   })
@@ -194,6 +230,8 @@ const handleSubmit = async () => {
 
 // 组件挂载时获取数据
 onMounted(() => {
+  fetchPatientList()
+  fetchVisitList()
   fetchWardList()
 })
 </script>

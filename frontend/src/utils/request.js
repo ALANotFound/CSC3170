@@ -27,17 +27,17 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   response => {
-    // 如果是204状态码，直接返回
-    if (response.status === 204) {
-      return response
+    // 检查HTTP状态码是否在200-299范围内
+    if (response.status >= 200 && response.status < 300) {
+      return response.data
     }
     
     const res = response.data
     
-    // 如果后端约定的状态码不是200或201，说明请求出错
-    if (res.code !== 200 && res.code !== 201) {
+    // 如果后端返回了错误信息，显示错误
+    if (res.message && res.message !== 'success') {
       ElMessage({
-        message: res.message || '请求失败',
+        message: res.message,
         type: 'error',
         duration: 5 * 1000
       })
@@ -56,10 +56,10 @@ service.interceptors.response.use(
         })
       }
       
-      return Promise.reject(new Error(res.message || '请求失败'))
-    } else {
-      return res
+      return Promise.reject(new Error(res.message))
     }
+    
+    return Promise.reject(new Error('请求失败'))
   },
   error => {
     console.error('响应错误:', error)

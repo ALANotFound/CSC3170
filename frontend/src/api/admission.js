@@ -19,9 +19,13 @@ export function addAdmission(data) {
 }
 
 // 办理出院
-export function dischargePatient(id) {
+export function dischargePatient(id, data) {
   return request({
     url: `/admission/${id}/discharge`,
-    method: 'put'
+    method: 'put',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    data
   })
 } 

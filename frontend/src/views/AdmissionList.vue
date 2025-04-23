@@ -183,7 +183,10 @@ const handleDischarge = (row) => {
     }
   ).then(async () => {
     try {
-      await dischargePatient(row.AdmissionID)
+      const dischargeData = {
+        DischargeDate: new Date().toISOString().split('T')[0] // 格式化为 YYYY-MM-DD
+      }
+      await dischargePatient(row.AdmissionID, dischargeData)
       ElMessage.success('出院办理成功')
       fetchAdmissionList()
     } catch (error) {
