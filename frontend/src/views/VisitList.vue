@@ -8,13 +8,35 @@
     <el-card class="search-card">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="患者">
-          <el-select v-model="searchForm.PatientID" placeholder="请选择患者" clearable>
-            <el-option v-for="patient in patientList" :key="patient.PatientID" :label="patient.Name" :value="patient.PatientID" />
+          <el-select 
+            v-model="searchForm.PatientID" 
+            placeholder="请选择患者" 
+            clearable
+            style="width: 200px"
+            filterable
+          >
+            <el-option 
+              v-for="patient in patientList" 
+              :key="patient.PatientID" 
+              :label="patient.Name" 
+              :value="patient.PatientID" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="医师">
-          <el-select v-model="searchForm.DoctorID" placeholder="请选择医师" clearable>
-            <el-option v-for="doctor in doctorList" :key="doctor.DoctorID" :label="doctor.Name" :value="doctor.DoctorID" />
+          <el-select 
+            v-model="searchForm.DoctorID" 
+            placeholder="请选择医师" 
+            clearable
+            style="width: 200px"
+            filterable
+          >
+            <el-option 
+              v-for="doctor in doctorList" 
+              :key="doctor.DoctorID" 
+              :label="doctor.Name" 
+              :value="doctor.DoctorID" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="就诊日期">
@@ -22,7 +44,7 @@
             v-model="searchForm.VisitDate"
             type="date"
             placeholder="选择日期"
-            style="width: 100%"
+            style="width: 200px"
             value-format="YYYY-MM-DD"
           />
         </el-form-item>
@@ -36,7 +58,7 @@
     <el-card class="table-card">
       <el-table
         v-loading="loading"
-        :data="visitList"
+        :data="getCurrentPageData()"
         border
         style="width: 100%"
         :header-cell-style="{textAlign: 'center'}"
@@ -140,6 +162,7 @@ import { getDoctorList } from '@/api/doctor'
 const router = useRouter()
 const loading = ref(false)
 const visitList = ref([])
+const filteredVisitList = ref([])
 const patientList = ref([])
 const doctorList = ref([])
 
@@ -173,21 +196,11 @@ const currentPatientName = ref('')
 const fetchVisitList = async () => {
   loading.value = true
   try {
-    const params = {
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-      ...searchForm
-    }
-    
-    const res = await getVisitList(params)
+    const res = await getVisitList()
     visitList.value = res.data.list || res.data
-    pagination.total = res.data.total || res.data.length
-    if (res.data.page) {
-      pagination.current = res.data.page
-    }
-    if (res.data.pageSize) {
-      pagination.pageSize = res.data.pageSize
-    }
+    filteredVisitList.value = visitList.value
+    pagination.total = visitList.value.length
+    handleSearch() // 获取数据后立即应用筛选
   } catch (error) {
     console.error('获取就诊记录失败:', error)
     ElMessage.error('获取就诊记录失败')
@@ -230,8 +243,20 @@ const getDoctorName = (doctorId) => {
 
 // 搜索
 const handleSearch = () => {
+  // 根据搜索条件筛选数据
+  filteredVisitList.value = visitList.value.filter(item => {
+    const patientMatch = !searchForm.PatientID || 
+      item.PatientID === searchForm.PatientID
+    const doctorMatch = !searchForm.DoctorID || 
+      item.DoctorID === searchForm.DoctorID
+    const dateMatch = !searchForm.VisitDate || 
+      item.VisitDate === searchForm.VisitDate
+    return patientMatch && doctorMatch && dateMatch
+  })
+  
+  // 更新分页信息
+  pagination.total = filteredVisitList.value.length
   pagination.current = 1
-  fetchVisitList()
 }
 
 // 重置搜索
@@ -239,8 +264,14 @@ const resetSearch = () => {
   Object.keys(searchForm).forEach(key => {
     searchForm[key] = ''
   })
-  pagination.current = 1
-  fetchVisitList()
+  handleSearch()
+}
+
+// 获取当前页的数据
+const getCurrentPageData = () => {
+  const start = (pagination.current - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+  return filteredVisitList.value.slice(start, end)
 }
 
 // 查看详情
@@ -276,13 +307,12 @@ const submitPrescription = () => {
 // 页面大小变化
 const handleSizeChange = (size) => {
   pagination.pageSize = size
-  fetchVisitList()
+  pagination.current = 1
 }
 
 // 当前页变化
 const handleCurrentChange = (page) => {
   pagination.current = page
-  fetchVisitList()
 }
 
 // 组件挂载时获取数据
