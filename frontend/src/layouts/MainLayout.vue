@@ -75,7 +75,9 @@
               <el-icon><el-icon-trend-charts /></el-icon>
               <span>统计分析</span>
             </template>
-            <el-menu-item index="/statistics">综合统计</el-menu-item>
+            <el-menu-item index="statistics/department">科室统计</el-menu-item>
+            <el-menu-item index="statistics/doctor">医师工作量</el-menu-item>
+            <el-menu-item index="statistics/revenue">流水统计</el-menu-item>
           </el-sub-menu>
     
         </el-menu>

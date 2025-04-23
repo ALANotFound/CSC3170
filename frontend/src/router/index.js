@@ -4,15 +4,9 @@ const routes = [
   {
     path: '/',
     component: () => import('../layouts/MainLayout.vue'),
-    redirect: '/dashboard',
+    redirect: '/statistics',
 
     children: [
-      {
-        path: 'dashboard',
-        name: 'Dashboard',
-        component: () => import('../views/Dashboard.vue'),
-        meta: { title: '首页' }
-      },
       {
         path: 'patients',
         name: 'Patients',
