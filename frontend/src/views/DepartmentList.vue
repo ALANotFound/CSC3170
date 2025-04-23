@@ -23,7 +23,7 @@
     <el-card class="table-card">
       <el-table
         v-loading="loading"
-        :data="departmentList"
+        :data="getCurrentPageData()"
         border
         style="width: 100%"
         :header-cell-style="{textAlign: 'center'}"
@@ -68,6 +68,7 @@ import { getDepartmentList } from '@/api/department'
 const router = useRouter()
 const loading = ref(false)
 const departmentList = ref([])
+const filteredDepartmentList = ref([])
 
 // 搜索表单
 const searchForm = reactive({
@@ -86,21 +87,11 @@ const pagination = reactive({
 const fetchDepartmentList = async () => {
   loading.value = true
   try {
-    const params = {
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-      ...searchForm
-    }
-    
-    const res = await getDepartmentList(params)
+    const res = await getDepartmentList()
     departmentList.value = res.data.list || res.data
-    pagination.total = res.data.total || res.data.length
-    if (res.data.page) {
-      pagination.current = res.data.page
-    }
-    if (res.data.pageSize) {
-      pagination.pageSize = res.data.pageSize
-    }
+    filteredDepartmentList.value = departmentList.value
+    pagination.total = departmentList.value.length
+    handleSearch() // 获取数据后立即应用筛选
   } catch (error) {
     console.error('获取科室列表失败:', error)
     ElMessage.error('获取科室列表失败')
@@ -111,8 +102,18 @@ const fetchDepartmentList = async () => {
 
 // 搜索
 const handleSearch = () => {
+  // 根据搜索条件筛选数据
+  filteredDepartmentList.value = departmentList.value.filter(item => {
+    const nameMatch = !searchForm.DeptName || 
+      item.DeptName.toLowerCase().includes(searchForm.DeptName.toLowerCase())
+    const locationMatch = !searchForm.Location || 
+      item.Location.toLowerCase().includes(searchForm.Location.toLowerCase())
+    return nameMatch && locationMatch
+  })
+  
+  // 更新分页信息
+  pagination.total = filteredDepartmentList.value.length
   pagination.current = 1
-  fetchDepartmentList()
 }
 
 // 重置搜索
@@ -120,8 +121,14 @@ const resetSearch = () => {
   Object.keys(searchForm).forEach(key => {
     searchForm[key] = ''
   })
-  pagination.current = 1
-  fetchDepartmentList()
+  handleSearch()
+}
+
+// 获取当前页的数据
+const getCurrentPageData = () => {
+  const start = (pagination.current - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+  return filteredDepartmentList.value.slice(start, end)
 }
 
 // 编辑科室
@@ -132,13 +139,12 @@ const handleEdit = (row) => {
 // 页面大小变化
 const handleSizeChange = (size) => {
   pagination.pageSize = size
-  fetchDepartmentList()
+  pagination.current = 1
 }
 
 // 当前页变化
 const handleCurrentChange = (page) => {
   pagination.current = page
-  fetchDepartmentList()
 }
 
 // 组件挂载时获取数据

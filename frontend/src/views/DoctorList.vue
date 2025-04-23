@@ -134,15 +134,17 @@ const fetchDoctorList = async () => {
 const fetchDepartmentList = async () => {
   try {
     const res = await getDepartmentList()
-    departmentList.value = res.data
+    departmentList.value = res.data.list || res.data || []
   } catch (error) {
     console.error('获取科室列表失败:', error)
     ElMessage.error('获取科室列表失败')
+    departmentList.value = []
   }
 }
 
 // 根据科室ID获取科室名称
 const getDepartmentName = (deptId) => {
+  if (!deptId) return '未知科室'
   const dept = departmentList.value.find(item => item.DeptID === deptId)
   return dept ? dept.DeptName : '未知科室'
 }
@@ -183,6 +185,12 @@ const handleDelete = (row) => {
       ElMessage.success('删除成功')
       fetchDoctorList()
     } catch (error) {
+      // 检查是否是204状态码（删除成功）
+      if (error.response && error.response.status === 204) {
+        ElMessage.success('删除成功')
+        fetchDoctorList()
+        return
+      }
       console.error('删除医师失败:', error)
       ElMessage.error('删除医师失败')
     }

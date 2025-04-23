@@ -27,6 +27,11 @@ service.interceptors.request.use(
 // 响应拦截器
 service.interceptors.response.use(
   response => {
+    // 如果是204状态码，直接返回
+    if (response.status === 204) {
+      return response
+    }
+    
     const res = response.data
     
     // 如果后端约定的状态码不是200或201，说明请求出错

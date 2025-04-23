@@ -20,13 +20,13 @@
             </el-form-item>
           </el-col>
           <el-col :span="12">
-            <el-form-item label="科室" prop="DeptID">
-              <el-select v-model="form.DeptID" placeholder="请选择科室" style="width: 100%">
+            <el-form-item label="科室" prop="DeptName">
+              <el-select v-model="form.DeptName" placeholder="请选择科室" style="width: 100%">
                 <el-option 
                   v-for="dept in departmentList" 
                   :key="dept.DeptID" 
                   :label="dept.DeptName" 
-                  :value="dept.DeptID" 
+                  :value="dept.DeptName" 
                 />
               </el-select>
             </el-form-item>
@@ -76,15 +76,18 @@ const isEdit = computed(() => {
 // 表单数据
 const form = reactive({
   Name: '',
-  DeptID: '',
+  DeptName: '',
   Title: '',
   Phone: ''
 })
 
 // 表单验证规则
 const rules = reactive({
-  Name: [{ required: true, message: '请输入医师姓名', trigger: 'blur' }],
-  DeptID: [{ required: true, message: '请选择科室', trigger: 'change' }],
+  Name: [
+    { required: true, message: '请输入医师姓名', trigger: 'blur' },
+    { max: 50, message: '姓名长度不能超过50个字符', trigger: 'blur' }
+  ],
+  DeptName: [{ required: true, message: '请选择科室', trigger: 'change' }],
   Phone: [
     { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号码', trigger: 'blur' }
   ]
@@ -94,10 +97,11 @@ const rules = reactive({
 const fetchDepartmentList = async () => {
   try {
     const res = await getDepartmentList()
-    departmentList.value = res.data
+    departmentList.value = res.data.list || res.data || []
   } catch (error) {
     console.error('获取科室列表失败:', error)
     ElMessage.error('获取科室列表失败')
+    departmentList.value = []
   }
 }
 
@@ -129,7 +133,7 @@ const submitForm = () => {
       // 准备提交的数据
       const submitData = {
         Name: form.Name,
-        DeptID: form.DeptID,
+        DeptName: form.DeptName,
         Title: form.Title,
         Phone: form.Phone
       }
