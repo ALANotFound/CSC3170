@@ -40,12 +40,6 @@
               @click="handleEdit(scope.row)"
               >编辑</el-button
             >
-            <el-button
-              type="danger"
-              size="small"
-              @click="handleDelete(scope.row)"
-              >删除</el-button
-            >
           </template>
         </el-table-column>
       </el-table>
@@ -68,8 +62,8 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getDepartmentList, deleteDepartment } from '@/api/department'
+import { ElMessage } from 'element-plus'
+import { getDepartmentList } from '@/api/department'
 
 const router = useRouter()
 const loading = ref(false)
@@ -133,30 +127,6 @@ const resetSearch = () => {
 // 编辑科室
 const handleEdit = (row) => {
   router.push(`/departments/edit/${row.DeptID}`)
-}
-
-// 删除科室
-const handleDelete = (row) => {
-  ElMessageBox.confirm(
-    `确定要删除科室 "${row.DeptName}" 吗？`,
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      await deleteDepartment(row.DeptID)
-      ElMessage.success('删除成功')
-      fetchDepartmentList()
-    } catch (error) {
-      console.error('删除科室失败:', error)
-      ElMessage.error('删除科室失败')
-    }
-  }).catch(() => {
-    // 取消删除
-  })
 }
 
 // 页面大小变化

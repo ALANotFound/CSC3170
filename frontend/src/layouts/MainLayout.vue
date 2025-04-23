@@ -39,8 +39,8 @@
               <el-icon><el-icon-user-filled /></el-icon>
               <span>科室管理</span>
             </template>
-            <el-menu-item index="/departments">医师列表</el-menu-item>
-            <el-menu-item index="/departments/add">新增医师</el-menu-item>
+            <el-menu-item index="/departments">科室列表</el-menu-item>
+            <el-menu-item index="/departments/add">新增科室</el-menu-item>
           </el-sub-menu>
 
           <el-sub-menu index="/wards">
