@@ -1,10 +1,14 @@
 from flask import Flask
 from .config import Config
 from .extensions import db
+from flask_cors import CORS
 
 def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
+    
+    # 启用CORS，支持跨域请求
+    CORS(app, resources={r"/*": {"origins": "*"}})
 
     db.init_app(app)
 

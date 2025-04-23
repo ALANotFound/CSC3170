@@ -1,6 +1,17 @@
 # 如何运行
+后端
 ```
-python /backend/run.py
+python run.py
+```
+前端
+```
+cd /frontend
+```
+```
+pnpm i
+```
+```
+pnpm dev
 ```
 
 # 数据库信息
