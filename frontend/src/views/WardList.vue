@@ -11,8 +11,18 @@
           <el-input v-model="searchForm.WardName" placeholder="请输入病房名称" clearable />
         </el-form-item>
         <el-form-item label="所属科室">
-          <el-select v-model="searchForm.DeptID" placeholder="请选择科室" clearable>
-            <el-option v-for="dept in departmentList" :key="dept.DeptID" :label="dept.DeptName" :value="dept.DeptID" />
+          <el-select 
+            v-model="searchForm.DeptID" 
+            placeholder="请选择科室" 
+            clearable
+            style="width: 200px"
+          >
+            <el-option 
+              v-for="dept in departmentList" 
+              :key="dept.DeptID" 
+              :label="dept.DeptName" 
+              :value="dept.DeptID"
+            />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -25,7 +35,7 @@
     <el-card class="table-card">
       <el-table
         v-loading="loading"
-        :data="wardList"
+        :data="getCurrentPageData()"
         border
         style="width: 100%"
         :header-cell-style="{textAlign: 'center'}"
@@ -39,9 +49,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="Capacity" label="床位数" width="100" align="center" />
-        <el-table-column prop="Occupied" label="已占用" width="100" align="center" />
         <el-table-column prop="Floor" label="楼层" width="100" align="center" />
-        <el-table-column prop="Building" label="所在楼" min-width="120" align="center" />
         <el-table-column label="操作" width="200" fixed="right" align="center">
           <template #default="scope">
             <el-button
@@ -49,12 +57,6 @@
               size="small"
               @click="handleEdit(scope.row)"
               >编辑</el-button
-            >
-            <el-button
-              type="danger"
-              size="small"
-              @click="handleDelete(scope.row)"
-              >删除</el-button
             >
           </template>
         </el-table-column>
@@ -85,6 +87,7 @@ import { getDepartmentList } from '@/api/department'
 const router = useRouter()
 const loading = ref(false)
 const wardList = ref([])
+const filteredWardList = ref([])
 const departmentList = ref([])
 
 // 搜索表单
@@ -104,21 +107,11 @@ const pagination = reactive({
 const fetchWardList = async () => {
   loading.value = true
   try {
-    const params = {
-      page: pagination.current,
-      pageSize: pagination.pageSize,
-      ...searchForm
-    }
-    
-    const res = await getWardList(params)
+    const res = await getWardList()
     wardList.value = res.data.list || res.data
-    pagination.total = res.data.total || res.data.length
-    if (res.data.page) {
-      pagination.current = res.data.page
-    }
-    if (res.data.pageSize) {
-      pagination.pageSize = res.data.pageSize
-    }
+    filteredWardList.value = wardList.value
+    pagination.total = wardList.value.length
+    handleSearch() // 获取数据后立即应用筛选
   } catch (error) {
     console.error('获取病房列表失败:', error)
     ElMessage.error('获取病房列表失败')
@@ -131,23 +124,35 @@ const fetchWardList = async () => {
 const fetchDepartmentList = async () => {
   try {
     const res = await getDepartmentList()
-    departmentList.value = res.data.list || res.data
+    departmentList.value = res.data.list || res.data || []
   } catch (error) {
     console.error('获取科室列表失败:', error)
     ElMessage.error('获取科室列表失败')
+    departmentList.value = []
   }
 }
 
 // 根据科室ID获取科室名称
 const getDepartmentName = (deptId) => {
+  if (!deptId) return '未知科室'
   const dept = departmentList.value.find(item => item.DeptID === deptId)
   return dept ? dept.DeptName : '未知科室'
 }
 
 // 搜索
 const handleSearch = () => {
+  // 根据搜索条件筛选数据
+  filteredWardList.value = wardList.value.filter(item => {
+    const nameMatch = !searchForm.WardName || 
+      item.WardName.toLowerCase().includes(searchForm.WardName.toLowerCase())
+    const deptMatch = !searchForm.DeptID || 
+      item.DeptID === searchForm.DeptID
+    return nameMatch && deptMatch
+  })
+  
+  // 更新分页信息
+  pagination.total = filteredWardList.value.length
   pagination.current = 1
-  fetchWardList()
 }
 
 // 重置搜索
@@ -155,8 +160,14 @@ const resetSearch = () => {
   Object.keys(searchForm).forEach(key => {
     searchForm[key] = ''
   })
-  pagination.current = 1
-  fetchWardList()
+  handleSearch()
+}
+
+// 获取当前页的数据
+const getCurrentPageData = () => {
+  const start = (pagination.current - 1) * pagination.pageSize
+  const end = start + pagination.pageSize
+  return filteredWardList.value.slice(start, end)
 }
 
 // 编辑病房
@@ -164,40 +175,15 @@ const handleEdit = (row) => {
   router.push(`/wards/edit/${row.WardID}`)
 }
 
-// 删除病房
-const handleDelete = (row) => {
-  ElMessageBox.confirm(
-    `确定要删除病房 "${row.WardName}" 吗？`,
-    '警告',
-    {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
-      type: 'warning'
-    }
-  ).then(async () => {
-    try {
-      await deleteWard(row.WardID)
-      ElMessage.success('删除成功')
-      fetchWardList()
-    } catch (error) {
-      console.error('删除病房失败:', error)
-      ElMessage.error('删除病房失败')
-    }
-  }).catch(() => {
-    // 取消删除
-  })
-}
-
 // 页面大小变化
 const handleSizeChange = (size) => {
   pagination.pageSize = size
-  fetchWardList()
+  pagination.current = 1
 }
 
 // 当前页变化
 const handleCurrentChange = (page) => {
   pagination.current = page
-  fetchWardList()
 }
 
 // 组件挂载时获取数据

@@ -48,8 +48,8 @@
               <el-icon><el-icon-user-filled /></el-icon>
               <span>病房管理</span>
             </template>
-            <el-menu-item index="/wards">医师列表</el-menu-item>
-            <el-menu-item index="/wards/add">新增医师</el-menu-item>
+            <el-menu-item index="/wards">病房列表</el-menu-item>
+            <el-menu-item index="/wards/add">新增病房</el-menu-item>
           </el-sub-menu>
           
           <el-sub-menu index="/visits">

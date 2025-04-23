@@ -11,8 +11,19 @@
           <el-input v-model="searchForm.Name" placeholder="请输入医师姓名" clearable />
         </el-form-item>
         <el-form-item label="科室">
-          <el-select v-model="searchForm.DeptID" placeholder="请选择科室" clearable>
-            <el-option v-for="dept in departmentList" :key="dept.DeptID" :label="dept.DeptName" :value="dept.DeptID" />
+          <el-select 
+            v-model="searchForm.DeptID" 
+            placeholder="请选择科室" 
+            clearable
+            style="width: 200px"
+            filterable
+          >
+            <el-option 
+              v-for="dept in departmentList" 
+              :key="dept.DeptID" 
+              :label="dept.DeptName" 
+              :value="dept.DeptID" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="职称">

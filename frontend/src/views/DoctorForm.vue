@@ -21,7 +21,12 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="科室" prop="DeptName">
-              <el-select v-model="form.DeptName" placeholder="请选择科室" style="width: 100%">
+              <el-select 
+                v-model="form.DeptName" 
+                placeholder="请选择科室" 
+                style="width: 200px"
+                filterable
+              >
                 <el-option 
                   v-for="dept in departmentList" 
                   :key="dept.DeptID" 
