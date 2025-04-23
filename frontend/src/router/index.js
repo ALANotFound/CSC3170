@@ -133,6 +133,12 @@ const routes = [
         component: () => import('../views/DoctorWorkload.vue'),
         meta: { title: '医师工作量' }
       },
+      {
+        path: 'statistics',
+        name: 'Statistics',
+        component: () => import('../views/Statistics.vue'),
+        meta: { title: '统计分析' }
+      },
     ]
   },
   {

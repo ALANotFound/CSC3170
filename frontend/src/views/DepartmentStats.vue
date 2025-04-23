@@ -7,29 +7,31 @@
     <el-card class="search-card">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="科室">
-          <el-select v-model="searchForm.DepartmentID" placeholder="请选择科室" clearable>
+          <el-select
+            v-model="searchForm.DeptID"
+            placeholder="请选择科室"
+            filterable
+            clearable
+            style="width: 200px"
+            @change="handleDepartmentChange"
+          >
             <el-option
               v-for="dept in departmentList"
-              :key="dept.DepartmentID"
-              :label="dept.DepartmentName"
-              :value="dept.DepartmentID"
-            />
+              :key="dept.DeptID"
+              :label="dept.DeptName"
+              :value="dept.DeptID"
+            >
+              <span>{{ dept.DeptName }}</span>
+            </el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="统计时间">
-          <el-date-picker
-            v-model="searchForm.dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            value-format="YYYY-MM-DD"
-          />
         </el-form-item>
         <el-form-item>
           <el-button type="primary" @click="handleSearch">查询</el-button>
         </el-form-item>
       </el-form>
+      <div v-if="currentDepartment" class="department-info">
+        当前选择：{{ currentDepartment }}
+      </div>
     </el-card>
     
     <el-row :gutter="20" class="stats-cards">
@@ -37,15 +39,11 @@
         <el-card class="stats-card">
           <template #header>
             <div class="card-header">
-              <span>就诊人次</span>
+              <span>门诊人次</span>
             </div>
           </template>
           <div class="card-content">
-            <div class="number">{{ stats.visitCount || 0 }}</div>
-            <div class="trend" :class="stats.visitTrend >= 0 ? 'up' : 'down'">
-              <el-icon><el-icon-caret-top /></el-icon>
-              {{ Math.abs(stats.visitTrend) }}%
-            </div>
+            <div class="number">{{ stats.outpatientCount || 0 }}</div>
           </div>
         </el-card>
       </el-col>
@@ -58,11 +56,7 @@
             </div>
           </template>
           <div class="card-content">
-            <div class="number">{{ stats.admissionCount || 0 }}</div>
-            <div class="trend" :class="stats.admissionTrend >= 0 ? 'up' : 'down'">
-              <el-icon><el-icon-caret-top /></el-icon>
-              {{ Math.abs(stats.admissionTrend) }}%
-            </div>
+            <div class="number">{{ stats.inpatientCount || 0 }}</div>
           </div>
         </el-card>
       </el-col>
@@ -71,132 +65,109 @@
         <el-card class="stats-card">
           <template #header>
             <div class="card-header">
-              <span>平均住院天数</span>
+              <span>总收入</span>
             </div>
           </template>
           <div class="card-content">
-            <div class="number">{{ stats.avgStayDays || 0 }}</div>
-            <div class="trend" :class="stats.stayDaysTrend >= 0 ? 'up' : 'down'">
-              <el-icon><el-icon-caret-top /></el-icon>
-              {{ Math.abs(stats.stayDaysTrend) }}%
-            </div>
+            <div class="number">¥{{ stats.totalRevenue || 0 }}</div>
           </div>
         </el-card>
       </el-col>
     </el-row>
-    
-    <el-card class="chart-card">
-      <template #header>
-        <div class="card-header">
-          <span>就诊趋势</span>
-        </div>
-      </template>
-      <div class="chart-container">
-        <div ref="visitChart" style="width: 100%; height: 400px;"></div>
-      </div>
-    </el-card>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import * as echarts from 'echarts'
-import { getDepartmentList } from '@/api/department'
+import { getDepartmentList, getDepartmentDetail } from '@/api/department'
+import { getDepartmentStats } from '@/api/report'
 
 const searchForm = reactive({
-  DepartmentID: '',
-  dateRange: []
+  DeptID: ''
 })
 
 const departmentList = ref([])
+const currentDepartment = ref('')
 const stats = reactive({
-  visitCount: 0,
-  visitTrend: 0,
-  admissionCount: 0,
-  admissionTrend: 0,
-  avgStayDays: 0,
-  stayDaysTrend: 0
+  outpatientCount: 0,
+  inpatientCount: 0,
+  totalRevenue: 0
 })
-
-let visitChart = null
 
 // 获取科室列表
 const fetchDepartmentList = async () => {
   try {
     const res = await getDepartmentList()
-    departmentList.value = res.data.list || res.data
+    departmentList.value = res.data.list || []
   } catch (error) {
     console.error('获取科室列表失败:', error)
     ElMessage.error('获取科室列表失败')
   }
 }
 
+// 获取科室详情
+const fetchDepartmentDetail = async (id) => {
+  try {
+    const res = await getDepartmentDetail(id)
+    if (res.data) {
+      currentDepartment.value = res.data.DeptName
+    }
+  } catch (error) {
+    console.error('获取科室详情失败:', error)
+    ElMessage.error('获取科室详情失败')
+  }
+}
+
+// 处理科室选择变化
+const handleDepartmentChange = async (value) => {
+  if (value) {
+    await fetchDepartmentDetail(value)
+  } else {
+    currentDepartment.value = ''
+  }
+  fetchStats()
+}
+
 // 获取统计数据
 const fetchStats = async () => {
   try {
-    const params = {
-      id: searchForm.DepartmentID,
-      startDate: searchForm.dateRange?.[0],
-      endDate: searchForm.dateRange?.[1]
+    if (searchForm.DeptID) {
+      const res = await getDepartmentStats(searchForm.DeptID)
+      if (res.data && res.data.length > 0) {
+        const deptStats = res.data[0]
+        stats.outpatientCount = deptStats.outpatientCount || 0
+        stats.inpatientCount = deptStats.inpatientCount || 0
+        stats.totalRevenue = deptStats.totalRevenue || 0
+      }
+    } else {
+      // 如果没有选择科室，显示所有科室的汇总数据
+      const allDepts = departmentList.value
+      const allStats = await Promise.all(
+        allDepts.map(dept => getDepartmentStats(dept.DeptID))
+      )
+      
+      // 汇总所有科室的数据
+      const totalStats = allStats.reduce((acc, curr) => {
+        if (curr.data && curr.data.length > 0) {
+          const deptStats = curr.data[0]
+          acc.outpatientCount += deptStats.outpatientCount || 0
+          acc.inpatientCount += deptStats.inpatientCount || 0
+          acc.totalRevenue += deptStats.totalRevenue || 0
+        }
+        return acc
+      }, {
+        outpatientCount: 0,
+        inpatientCount: 0,
+        totalRevenue: 0
+      })
+      
+      Object.assign(stats, totalStats)
     }
-    // 暂时使用模拟数据
-    const mockData = {
-      visitCount: 1200,
-      visitTrend: 5,
-      admissionCount: 300,
-      admissionTrend: 3,
-      avgStayDays: 7,
-      stayDaysTrend: -2,
-      visitTrendData: [
-        { date: '2024-01', visitCount: 350, admissionCount: 90 },
-        { date: '2024-02', visitCount: 420, admissionCount: 110 },
-        { date: '2024-03', visitCount: 430, admissionCount: 100 }
-      ]
-    }
-    Object.assign(stats, mockData)
-    initVisitChart(mockData.visitTrendData)
   } catch (error) {
     console.error('获取统计数据失败:', error)
     ElMessage.error('获取统计数据失败')
   }
-}
-
-// 初始化就诊趋势图表
-const initVisitChart = (data) => {
-  if (!visitChart) {
-    visitChart = echarts.init(document.querySelector('.chart-container .chart'))
-  }
-  
-  const option = {
-    tooltip: {
-      trigger: 'axis'
-    },
-    legend: {
-      data: ['就诊人次', '住院人次']
-    },
-    xAxis: {
-      type: 'category',
-      data: data.map(item => item.date)
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [
-      {
-        name: '就诊人次',
-        type: 'line',
-        data: data.map(item => item.visitCount)
-      },
-      {
-        name: '住院人次',
-        type: 'line',
-        data: data.map(item => item.admissionCount)
-      }
-    ]
-  }
-  
-  visitChart.setOption(option)
 }
 
 // 搜索
@@ -208,11 +179,6 @@ const handleSearch = () => {
 onMounted(() => {
   fetchDepartmentList()
   fetchStats()
-  
-  // 监听窗口大小变化，调整图表大小
-  window.addEventListener('resize', () => {
-    visitChart?.resize()
-  })
 })
 </script>
 
@@ -227,6 +193,12 @@ onMounted(() => {
 
 .search-card {
   margin-bottom: 20px;
+}
+
+.department-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #606266;
 }
 
 .stats-cards {

@@ -11,9 +11,9 @@
           text-color="#bfcbd9"
           active-text-color="#409EFF"
         >
-          <el-menu-item index="/dashboard">
-            <el-icon><el-icon-monitor /></el-icon>
-            <span>首页</span>
+          <el-menu-item index="/statistics">
+            <el-icon><el-icon-odometer /></el-icon>
+            <span>仪表盘</span>
           </el-menu-item>
           
           <el-sub-menu index="/patients">
@@ -36,7 +36,7 @@
 
           <el-sub-menu index="/departments">
             <template #title>
-              <el-icon><el-icon-user-filled /></el-icon>
+              <el-icon><el-icon-office-building /></el-icon>
               <span>科室管理</span>
             </template>
             <el-menu-item index="/departments">科室列表</el-menu-item>
@@ -45,7 +45,7 @@
 
           <el-sub-menu index="/wards">
             <template #title>
-              <el-icon><el-icon-user-filled /></el-icon>
+              <el-icon><el-icon-house /></el-icon>
               <span>病房管理</span>
             </template>
             <el-menu-item index="/wards">病房列表</el-menu-item>
@@ -54,7 +54,7 @@
           
           <el-sub-menu index="/visits">
             <template #title>
-              <el-icon><el-icon-document /></el-icon>
+              <el-icon><el-icon-first-aid-kit /></el-icon>
               <span>就诊记录</span>
             </template>
             <el-menu-item index="/visits">记录列表</el-menu-item>
@@ -63,7 +63,7 @@
 
           <el-sub-menu index="/admissions">
             <template #title>
-              <el-icon><el-icon-hospital /></el-icon>
+              <el-icon><el-icon-video-camera /></el-icon>
               <span>住院记录</span>
             </template>
             <el-menu-item index="/admissions">在院患者</el-menu-item>
@@ -72,12 +72,10 @@
 
           <el-sub-menu index="/statistics">
             <template #title>
-              <el-icon><el-icon-data-analysis /></el-icon>
+              <el-icon><el-icon-trend-charts /></el-icon>
               <span>统计分析</span>
             </template>
-            <el-menu-item index="/statistics/department">科室统计</el-menu-item>
-            <el-menu-item index="/statistics/revenue">流水统计</el-menu-item>
-            <el-menu-item index="/statistics/doctor">医师工作量</el-menu-item>
+            <el-menu-item index="/statistics">综合统计</el-menu-item>
           </el-sub-menu>
     
         </el-menu>
