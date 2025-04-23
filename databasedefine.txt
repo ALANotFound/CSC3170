@@ -1,0 +1,63 @@
+-- 创建 Department 表（添加自增）
+CREATE TABLE Department (
+    DeptID INT PRIMARY KEY AUTO_INCREMENT,  -- 修改点：添加 AUTO_INCREMENT
+    DeptName VARCHAR(255) UNIQUE NOT NULL,  -- 添加唯一约束和非空
+    Location VARCHAR(255)
+) ENGINE=InnoDB;
+
+-- 创建 Patient 表（添加自增）
+CREATE TABLE Patient (
+    PatientID INT PRIMARY KEY AUTO_INCREMENT,  -- 自增
+    Name VARCHAR(255) NOT NULL,
+    Gender VARCHAR(50),
+    BirthDate DATE,
+    IdentityNo VARCHAR(255) UNIQUE NOT NULL,  -- 假设身份证号唯一
+    Phone VARCHAR(50)
+) ENGINE=InnoDB;
+
+-- 创建 Doctor 表（添加自增）
+CREATE TABLE Doctor (
+    DoctorID INT PRIMARY KEY AUTO_INCREMENT,  -- 自增
+    Name VARCHAR(255) NOT NULL,
+    DeptID INT NOT NULL,
+    Title VARCHAR(255),
+    Phone VARCHAR(50),
+    FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+) ENGINE=InnoDB;
+
+-- 创建 Ward 表（添加自增）
+CREATE TABLE Ward (
+    WardID INT PRIMARY KEY AUTO_INCREMENT,  -- 自增
+    WardName VARCHAR(255) NOT NULL,
+    Floor INT,
+    Capacity INT,
+    DeptID INT NOT NULL,
+    FOREIGN KEY (DeptID) REFERENCES Department(DeptID)
+) ENGINE=InnoDB;
+
+-- 创建 Admission 表（添加自增）
+CREATE TABLE Admission (
+    AdmissionID INT PRIMARY KEY AUTO_INCREMENT,  -- 自增
+    WardID INT NOT NULL,
+    BedNo VARCHAR(50),
+    AdmissionDate DATE NOT NULL,
+    DischargeDate DATE,
+    AdmissionReason TEXT,
+    FOREIGN KEY (WardID) REFERENCES Ward(WardID)
+) ENGINE=InnoDB;
+
+-- 创建 Visit 表（添加自增）
+CREATE TABLE Visit (
+    VisitID INT PRIMARY KEY AUTO_INCREMENT,  -- 自增
+    PatientID INT NOT NULL,
+    DoctorID INT NOT NULL,
+    AdmissionID INT,
+    VisitDate DATE NOT NULL,
+    Complaint TEXT,
+    Diagnosis TEXT,
+    Prescription TEXT,
+    Fee DECIMAL(10,2),
+    FOREIGN KEY (PatientID) REFERENCES Patient(PatientID),
+    FOREIGN KEY (DoctorID) REFERENCES Doctor(DoctorID),
+    FOREIGN KEY (AdmissionID) REFERENCES Admission(AdmissionID)
+) ENGINE=InnoDB;
