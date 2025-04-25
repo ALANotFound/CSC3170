@@ -69,16 +69,6 @@
             <el-menu-item index="/admissions">在院患者</el-menu-item>
             <el-menu-item index="/admissions/add">办理入院</el-menu-item>
           </el-sub-menu>
-
-          <el-sub-menu index="/statistics">
-            <template #title>
-              <el-icon><el-icon-trend-charts /></el-icon>
-              <span>统计分析</span>
-            </template>
-            <el-menu-item index="statistics/department">科室统计</el-menu-item>
-            <el-menu-item index="statistics/doctor">医师工作量</el-menu-item>
-            <el-menu-item index="statistics/revenue">流水统计</el-menu-item>
-          </el-sub-menu>
     
         </el-menu>
       </el-aside>
